@@ -161,8 +161,8 @@ class Observation(models.Model):
     Model allowing an Observation entity object to be saved to a persistent datastore
     """
     reception_time = models.DateTimeField(null=True, blank=True)
-    location = models.ForeignKey(Location)
-    weather = models.ForeignKey(Weather)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    weather = models.ForeignKey(Weather, on_delete=models.CASCADE)
 
     def to_entity(self):
         """
@@ -231,6 +231,7 @@ class Forecast(models.Model):
         verbose_name='Time the observation was received',
         help_text='Reception time')
     location = models.ForeignKey(Location,
+                                 on_delete=models.CASCADE,
                                  verbose_name='Location of the forecast',
                                  help_text='Location')
     weathers = models.ManyToManyField(Weather,
@@ -312,7 +313,7 @@ class Station(models.Model):
         help_text='Distance',
         null=True, blank=True)
     last_weather = models.ForeignKey(
-        Weather, null=True, blank=True,
+        Weather, null=True, blank=True, on_delete=models.CASCADE,
         verbose_name='Last weather measured by the station',
         help_text='Last weather')
 
@@ -447,6 +448,7 @@ class UVIndex(models.Model):
         verbose_name='Time the observation refers to',
         help_text='Reference time')
     location = models.ForeignKey(Location,
+                                 on_delete=models.CASCADE,
                                  verbose_name='Location of the observation',
                                  help_text='Location')
     value = models.FloatField(verbose_name='Observed UV intensity',
@@ -525,6 +527,7 @@ class COIndex(models.Model):
         verbose_name='Time the observation refers to',
         help_text='Reference time')
     location = models.ForeignKey(Location,
+                                 on_delete=models.CASCADE,
                                  verbose_name='Location of the observation',
                                  help_text='Location')
     interval = models.CharField(max_length=255,
@@ -602,6 +605,7 @@ class NO2Index(models.Model):
         verbose_name='Time the observation refers to',
         help_text='Reference time')
     location = models.ForeignKey(Location,
+                                 on_delete=models.CASCADE,
                                  verbose_name='Location of the observation',
                                  help_text='Location')
     interval = models.CharField(max_length=255,
@@ -679,6 +683,7 @@ class SO2Index(models.Model):
         verbose_name='Time the observation refers to',
         help_text='Reference time')
     location = models.ForeignKey(Location,
+                                 on_delete=models.CASCADE,
                                  verbose_name='Location of the observation',
                                  help_text='Location')
     interval = models.CharField(max_length=255,
@@ -756,6 +761,7 @@ class Ozone(models.Model):
         verbose_name='Time the observation refers to',
         help_text='Reference time')
     location = models.ForeignKey(Location,
+                                 on_delete=models.CASCADE,
                                  verbose_name='Location of the observation',
                                  help_text='Location')
     du_value = models.FloatField(verbose_name='Observed ozone Dobson Units',
