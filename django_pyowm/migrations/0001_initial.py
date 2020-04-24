@@ -86,8 +86,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('reference_time', models.DateTimeField(help_text='Reference time', verbose_name='Time the observation refers to')),
-                ('interval', models.CharField(choices=[('minute', 'One minute'), ('hour', 'One hour'), ('day', 'One day'), ('month', 'One month'), ('year', 'One year')], max_length=255, verbose_name='Time granularity of the observat
-ion')),
+                ('interval', models.CharField(choices=[('minute', 'One minute'), ('hour', 'One hour'), ('day', 'One day'), ('month', 'One month'), ('year', 'One year')], max_length=255, verbose_name='Time granularity of the observation')),
                 ('reception_time', models.DateTimeField(blank=True, help_text='Reception time', null=True, verbose_name='Time the observation was received')),
                 ('so2_samples', models.TextField(help_text='SO2 samples', verbose_name='SO2 samples data')),
                 ('location', models.ForeignKey(help_text='Location', on_delete=django.db.models.deletion.CASCADE, to='django_pyowm.Location', verbose_name='Location of the observation')),
