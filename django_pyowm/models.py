@@ -1,15 +1,18 @@
 import json
 from django.db import models
 from pyowm.utils import timeformatutils
-from pyowm.webapi25.location import Location as LocationEntity
-from pyowm.webapi25.weather import Weather as WeatherEntity
-from pyowm.webapi25.observation import Observation as ObservationEntity
-from pyowm.webapi25.forecast import Forecast as ForecastEntity
-from pyowm.webapi25.station import Station as StationEntity
-from pyowm.webapi25.stationhistory import StationHistory as StationHistoryEntity
-from pyowm.webapi25.uvindex import UVIndex as UVIndexEntity
-from pyowm.webapi25.coindex import COIndex as COIndexEntity
-from pyowm.webapi25.ozone import Ozone as OzoneEntity
+from pyowm.weatherapi25.location import Location as LocationEntity
+from pyowm.weatherapi25.weather import Weather as WeatherEntity
+from pyowm.weatherapi25.observation import Observation as ObservationEntity
+from pyowm.weatherapi25.forecast import Forecast as ForecastEntity
+from pyowm.weatherapi25.station import Station as StationEntity  # Deprecated
+# from pyowm.stationsapi30.station import Station as StationEntity
+from pyowm.weatherapi25.stationhistory import StationHistory as StationHistoryEntity
+from pyowm.uvindexapi30.uvindex import UVIndex as UVIndexEntity
+from pyowm.pollutionapi30.coindex import COIndex as COIndexEntity
+from pyowm.pollutionapi30.ozone import Ozone as OzoneEntity
+from pyowm.pollutionapi30.no2index import NO2Index as NO2IndexEntity
+from pyowm.pollutionapi30.so2index import SO2Index as SO2IndexEntity
 
 
 class Location(models.Model):
@@ -35,7 +38,7 @@ class Location(models.Model):
     def to_entity(self):
         """
         Generates a Location object out of the current model
-        :return: a pyowm.webapi25.location.Location instance
+        :return: a pyowm.weatherapi25.location.Location instance
         """
         return LocationEntity(self.name, self.lon, self.lat, self.city_id,
                               self.country)
@@ -45,7 +48,7 @@ class Location(models.Model):
         """
         Creates a model instance out of a Location model object
         :param location_obj: the Location object
-        :type location_obj: pyowm.webapi25.location.Location
+        :type location_obj: pyowm.weatherapi25.location.Location
         :return: a Location model instance
         """
         assert isinstance(location_obj, LocationEntity)
@@ -92,7 +95,7 @@ class Weather(models.Model):
     def to_entity(self):
         """
         Generates a Weather object out of the current model
-        :return: a pyowm.webapi25.weather.Weather instance
+        :return: a pyowm.weatherapi25.weather.Weather instance
         """
         return WeatherEntity(
             timeformatutils.timeformat(self.reference_time, 'unix'),
@@ -119,7 +122,7 @@ class Weather(models.Model):
         """
         Creates a model instance out of a Weather model object
         :param weather_obj: the Weather object
-        :type weather_obj: pyowm.webapi25.weather.Weather
+        :type weather_obj: pyowm.weatherapi25.weather.Weather
         :return: a Weather model instance
         """
         assert isinstance(weather_obj, WeatherEntity)
@@ -164,7 +167,7 @@ class Observation(models.Model):
     def to_entity(self):
         """
         Generates an Observation object out of the current model
-        :return: a pyowm.webapi25.observation.Observation instance
+        :return: a pyowm.weatherapi25.observation.Observation instance
         """
         return ObservationEntity(
             timeformatutils.timeformat(self.reception_time, 'unix'),
@@ -176,7 +179,7 @@ class Observation(models.Model):
         """
         Creates a model instance out of an Observation model object
         :param observation_obj: the Observation object
-        :type observation_obj: pyowm.webapi25.observation.Observation
+        :type observation_obj: pyowm.weatherapi25.observation.Observation
         :return: an Observation model instance
         """
         assert isinstance(observation_obj, ObservationEntity)
@@ -238,7 +241,7 @@ class Forecast(models.Model):
     def to_entity(self):
         """
         Generates a Forecast object out of the current model
-        :return: a pyowm.webapi25.forecast.Forecast instance
+        :return: a pyowm.weatherapi25.forecast.Forecast instance
         """
         return ForecastEntity(
             self.interval,
@@ -253,7 +256,7 @@ class Forecast(models.Model):
         that no Weather objects can be attached to the result model instance as
         it shall be saved before of instantiating the many-to-many relationship.
         :param forecast_obj: the Forecast object
-        :type forecast_obj: pyowm.webapi25.forecast.Forecast
+        :type forecast_obj: pyowm.weatherapi25.forecast.Forecast
         :return: a Forecast model instance
         """
         assert isinstance(forecast_obj, ForecastEntity)
@@ -316,7 +319,7 @@ class Station(models.Model):
     def to_entity(self):
         """
         Generates a Station object out of the current model
-        :return: a pyowm.webapi25.station.Station instance
+        :return: a pyowm.weatherapi25.station.Station instance
         """
         return StationEntity(
             self.name,
@@ -333,7 +336,7 @@ class Station(models.Model):
         """
         Creates a model instance out of a Station model object
         :param station_obj: the Station object
-        :type station_obj: pyowm.webapi25.station.Station
+        :type station_obj: pyowm.weatherapi25.station.Station
         :return: a Station model instance
         """
         assert isinstance(station_obj, StationEntity)
@@ -394,7 +397,7 @@ class StationHistory(models.Model):
     def to_entity(self):
         """
         Generates a StationHistory object out of the current model
-        :return: a pyowm.webapi25.stationhistory.StationHistory instance
+        :return: a pyowm.weatherapi25.stationhistory.StationHistory instance
         """
         data = {int(k): v for k, v in json.loads(self.measurements).items()}
         return StationHistoryEntity(
@@ -408,7 +411,7 @@ class StationHistory(models.Model):
         """
         Creates a model instance out of a StationHistory model object
         :param stationhistory_obj: the StationHistory object
-        :type stationhistory_obj: pyowm.webapi25.stationhistory.StationHistory
+        :type stationhistory_obj: pyowm.weatherapi25.stationhistory.StationHistory
         :return: a StationHistory model instance
         """
         assert isinstance(stationhistory_obj, StationHistoryEntity)
@@ -448,10 +451,10 @@ class UVIndex(models.Model):
                                  help_text='Location')
     value = models.FloatField(verbose_name='Observed UV intensity',
                               help_text='Value')
-    interval = models.CharField(max_length=255,
-                                verbose_name='Time granularity of the observation',
-                                help_text='Interval',
-                                choices=INTERVAL_CHOICES)
+    # interval = models.CharField(max_length=255,
+    #                             verbose_name='Time granularity of the observation',
+    #                             help_text='Interval',
+    #                             choices=INTERVAL_CHOICES)
     reception_time = models.DateTimeField(
         null=True, blank=True,
         verbose_name='Time the observation was received',
@@ -460,12 +463,12 @@ class UVIndex(models.Model):
     def to_entity(self):
         """
         Generates a UVIndex object out of the current model
-        :return: a pyowm.webapi25.uvindex.UVIndex instance
+        :return: a pyowm.uvindexapi30.uvindex.UVIndex instance
         """
         return UVIndexEntity(
             timeformatutils.timeformat(self.reference_time, 'unix'),
             Location.to_entity(self.location),
-            self.interval,
+            # self.interval,
             self.value,
             timeformatutils.timeformat(self.reception_time, 'unix'))
 
@@ -474,7 +477,7 @@ class UVIndex(models.Model):
         """
         Creates a model instance out of a UVIndex entity object
         :param uvindex_obj: the UVIndex object
-        :type uvindex_obj: pyowm.webapi25.uvindex.UVIndex
+        :type uvindex_obj: pyowm.uvindexapi30.uvindex.UVIndex
         :return: a UVIndex model instance
         """
         assert isinstance(uvindex_obj, UVIndexEntity)
@@ -483,7 +486,7 @@ class UVIndex(models.Model):
             reference_time=uvindex_obj.get_reference_time(timeformat='date'),
             location=Location.from_entity(loc),
             value=uvindex_obj.get_value(),
-            interval=uvindex_obj.get_interval(),
+            # interval=uvindex_obj.get_interval(),
             reception_time=uvindex_obj.get_reception_time(timeformat='date'))
 
     def save_all(self):
@@ -537,7 +540,7 @@ class COIndex(models.Model):
     def to_entity(self):
         """
         Generates a COIndex object out of the current model
-        :return: a pyowm.webapi25.coindex.COIndex instance
+        :return: a pyowm.pollutionapi30.coindex.COIndex instance
         """
         return COIndexEntity(
             timeformatutils.timeformat(self.reference_time, 'unix'),
@@ -551,7 +554,7 @@ class COIndex(models.Model):
         """
         Creates a model instance out of a COIndex entity object
         :param coindex_obj: the COIndex object
-        :type coindex_obj: pyowm.webapi25.coindex.COIndex
+        :type coindex_obj: pyowm.pollutionapi30.coindex.COIndex
         :return: a COIndex model instance
         """
         assert isinstance(coindex_obj, COIndexEntity)
@@ -562,6 +565,160 @@ class COIndex(models.Model):
             interval=coindex_obj.get_interval(),
             reception_time=coindex_obj.get_reception_time(timeformat='date'),
             co_samples=json.dumps(coindex_obj.get_co_samples()))
+
+    def save_all(self):
+        """
+        Saves this model along with all related ones.
+        :return: None
+        """
+        location = self.location
+        location.save()
+        self.location = location
+        self.save()
+
+    class Meta:
+        app_label = 'django_pyowm'
+
+    def __repr__(self):
+        return "<%s.%s - pk=%s>" % (
+            __name__,
+            self.__class__.__name__,
+            self.pk if self.pk is not None else 'None')
+
+
+class NO2Index(models.Model):
+    """
+    Model allowing a NO2Index entity object to be saved to a persistent datastore
+    """
+
+    INTERVAL_CHOICES = (
+        (u'minute', u'One minute'),
+        (u'hour', u'One hour'),
+        (u'day', u'One day'),
+        (u'month', u'One month'),
+        (u'year', u'One year'))
+
+    reference_time = models.DateTimeField(
+        verbose_name='Time the observation refers to',
+        help_text='Reference time')
+    location = models.ForeignKey(Location,
+                                 verbose_name='Location of the observation',
+                                 help_text='Location')
+    interval = models.CharField(max_length=255,
+                                verbose_name='Time granularity of the observation',
+                                choices=INTERVAL_CHOICES)
+    reception_time = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name='Time the observation was received',
+        help_text='Reception time')
+    no2_samples = models.TextField(verbose_name='NO2 samples data',
+                                  help_text='NO2 samples')
+
+    def to_entity(self):
+        """
+        Generates a NO2Index object out of the current model
+        :return: a pyowm.pollutionapi30.no2index.NO2Index instance
+        """
+        return NO2IndexEntity(
+            timeformatutils.timeformat(self.reference_time, 'unix'),
+            Location.to_entity(self.location),
+            self.interval,
+            json.loads(self.no2_samples),
+            timeformatutils.timeformat(self.reception_time, 'unix'))
+
+    @classmethod
+    def from_entity(cls, no2index_obj):
+        """
+        Creates a model instance out of a NO2Index entity object
+        :param no2index_obj: the NO2Index object
+        :type no2index_obj: pyowm.pollutionapi30.no2index.NO2Index
+        :return: a NO2Index model instance
+        """
+        assert isinstance(no2index_obj, NO2IndexEntity)
+        loc = no2index_obj.get_location()
+        return NO2Index(
+            reference_time=no2index_obj.get_reference_time(timeformat='date'),
+            location=Location.from_entity(loc),
+            interval=no2index_obj.get_interval(),
+            reception_time=no2index_obj.get_reception_time(timeformat='date'),
+            no2_samples=json.dumps(no2index_obj.get_no2_samples()))
+
+    def save_all(self):
+        """
+        Saves this model along with all related ones.
+        :return: None
+        """
+        location = self.location
+        location.save()
+        self.location = location
+        self.save()
+
+    class Meta:
+        app_label = 'django_pyowm'
+
+    def __repr__(self):
+        return "<%s.%s - pk=%s>" % (
+            __name__,
+            self.__class__.__name__,
+            self.pk if self.pk is not None else 'None')
+
+
+class SO2Index(models.Model):
+    """
+    Model allowing a SO2Index entity object to be saved to a persistent datastore
+    """
+
+    INTERVAL_CHOICES = (
+        (u'minute', u'One minute'),
+        (u'hour', u'One hour'),
+        (u'day', u'One day'),
+        (u'month', u'One month'),
+        (u'year', u'One year'))
+
+    reference_time = models.DateTimeField(
+        verbose_name='Time the observation refers to',
+        help_text='Reference time')
+    location = models.ForeignKey(Location,
+                                 verbose_name='Location of the observation',
+                                 help_text='Location')
+    interval = models.CharField(max_length=255,
+                                verbose_name='Time granularity of the observation',
+                                choices=INTERVAL_CHOICES)
+    reception_time = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name='Time the observation was received',
+        help_text='Reception time')
+    so2_samples = models.TextField(verbose_name='SO2 samples data',
+                                  help_text='SO2 samples')
+
+    def to_entity(self):
+        """
+        Generates a SO2Index object out of the current model
+        :return: a pyowm.pollutionapi30.so2index.SO2Index instance
+        """
+        return SO2IndexEntity(
+            timeformatutils.timeformat(self.reference_time, 'unix'),
+            Location.to_entity(self.location),
+            self.interval,
+            json.loads(self.so2_samples),
+            timeformatutils.timeformat(self.reception_time, 'unix'))
+
+    @classmethod
+    def from_entity(cls, so2index_obj):
+        """
+        Creates a model instance out of a SO2Index entity object
+        :param so2index_obj: the SO2Index object
+        :type so2index_obj: pyowm.pollutionapi30.so2index.SO2Index
+        :return: a SO2Index model instance
+        """
+        assert isinstance(so2index_obj, SO2IndexEntity)
+        loc = so2index_obj.get_location()
+        return SO2Index(
+            reference_time=so2index_obj.get_reference_time(timeformat='date'),
+            location=Location.from_entity(loc),
+            interval=so2index_obj.get_interval(),
+            reception_time=so2index_obj.get_reception_time(timeformat='date'),
+            so2_samples=json.dumps(so2index_obj.get_so2_samples()))
 
     def save_all(self):
         """
@@ -614,7 +771,7 @@ class Ozone(models.Model):
     def to_entity(self):
         """
         Generates an Ozone object out of the current model
-        :return: a pyowm.webapi25.ozone.Ozone instance
+        :return: a pyowm.pollutionapi30.ozone.Ozone instance
         """
         return OzoneEntity(
             timeformatutils.timeformat(self.reference_time, 'unix'),
@@ -628,7 +785,7 @@ class Ozone(models.Model):
         """
         Creates a model instance out of an Ozone entity object
         :param ozone_obj: the Ozone object
-        :type ozone_obj: pyowm.webapi25.ozone.Ozone
+        :type ozone_obj: pyowm.pollutionapi30.ozone.Ozone
         :return: an Ozone model instance
         """
         assert isinstance(ozone_obj, OzoneEntity)
