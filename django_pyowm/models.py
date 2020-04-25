@@ -5,6 +5,7 @@ from pyowm.weatherapi25.location import Location as LocationEntity
 from pyowm.weatherapi25.weather import Weather as WeatherEntity
 from pyowm.weatherapi25.observation import Observation as ObservationEntity
 from pyowm.weatherapi25.forecast import Forecast as ForecastEntity
+from pyowm.weatherapi25.forecaster import Forecaster as ForecasterEntity
 from pyowm.weatherapi25.station import Station as StationEntity  # Deprecated
 # from pyowm.stationsapi30.station import Station as StationEntity
 from pyowm.weatherapi25.stationhistory import StationHistory as StationHistoryEntity
@@ -21,18 +22,20 @@ class Location(models.Model):
     """
     name = models.CharField(max_length=255,
                             null=True, blank=True,
-                            verbose_name='Toponym of the place',
-                            help_text='Name')
-    lon = models.FloatField(verbose_name='Longitude of the place',
-                            help_text='Longitude')
-    lat = models.FloatField(verbose_name='Latitude of the place',
-                            help_text='Latitude')
-    city_id = models.IntegerField(null=True, blank=True,
-                                  verbose_name='City ID related to the place',
-                                  help_text='City ID')
+                            verbose_name="Toponym of the place",
+                            help_text="Name")
+    lon = models.FloatField(verbose_name="Longitude of the place",
+                            help_text="Longitude")
+    lat = models.FloatField(verbose_name="Latitude of the place",
+                            help_text="Latitude")
+    city_id = models.IntegerField(null=True,
+                                  blank=True,
+                                  unique=True,
+                                  verbose_name="City ID related to the place",
+                                  help_text="City ID")
     country = models.CharField(max_length=255,
                                null=True, blank=True,
-                               verbose_name='Country of the place',
+                               verbose_name="Country of the place",
                                help_text="Country")
 
     def to_entity(self):
@@ -60,13 +63,18 @@ class Location(models.Model):
             country=location_obj.get_country())
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "Location"
+        verbose_name_plural = "Locations"
+
+    def __str__(self):
+        return "%s, %s" % (self.name, self.country)
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
 
 class Weather(models.Model):
@@ -98,9 +106,9 @@ class Weather(models.Model):
         :return: a pyowm.weatherapi25.weather.Weather instance
         """
         return WeatherEntity(
-            timeformatutils.timeformat(self.reference_time, 'unix'),
-            timeformatutils.timeformat(self.sunset_time, 'unix'),
-            timeformatutils.timeformat(self.sunrise_time, 'unix'),
+            timeformatutils.timeformat(self.reference_time, "unix"),
+            timeformatutils.timeformat(self.sunset_time, "unix"),
+            timeformatutils.timeformat(self.sunrise_time, "unix"),
             self.clouds,
             json.loads(self.rain),
             json.loads(self.snow),
@@ -115,7 +123,8 @@ class Weather(models.Model):
             self.visibility_distance,
             self.dewpoint,
             self.humidex,
-            self.heat_index)
+            self.heat_index
+        )
 
     @classmethod
     def from_entity(cls, weather_obj):
@@ -127,9 +136,9 @@ class Weather(models.Model):
         """
         assert isinstance(weather_obj, WeatherEntity)
         return Weather(
-            reference_time=weather_obj.get_reference_time(timeformat='date'),
-            sunrise_time=weather_obj.get_sunrise_time(timeformat='date'),
-            sunset_time=weather_obj.get_sunset_time(timeformat='date'),
+            reference_time=weather_obj.get_reference_time(timeformat="date"),
+            sunrise_time=weather_obj.get_sunrise_time(timeformat="date"),
+            sunset_time=weather_obj.get_sunset_time(timeformat="date"),
             clouds=weather_obj.get_clouds(),
             rain=json.dumps(weather_obj.get_rain()),
             snow=json.dumps(weather_obj.get_snow()),
@@ -147,13 +156,18 @@ class Weather(models.Model):
             heat_index=weather_obj.get_heat_index())
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "Weather Instance"
+        verbose_name_plural = "Weather Instances"
+
+    def __str__(self):
+        return "%s" % self.reference_time
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
 
 class Observation(models.Model):
@@ -170,7 +184,7 @@ class Observation(models.Model):
         :return: a pyowm.weatherapi25.observation.Observation instance
         """
         return ObservationEntity(
-            timeformatutils.timeformat(self.reception_time, 'unix'),
+            timeformatutils.timeformat(self.reception_time, "unix"),
             self.location.to_entity(),
             self.weather.to_entity())
 
@@ -188,7 +202,7 @@ class Observation(models.Model):
         loc = Location.from_entity(location_entity)
         weat = Weather.from_entity(weather_entity)
         return Observation(
-            reception_time=observation_obj.get_reception_time(timeformat='date'),
+            reception_time=observation_obj.get_reception_time(timeformat="date"),
             location=loc, weather=weat)
 
     def save_all(self):
@@ -205,13 +219,15 @@ class Observation(models.Model):
         self.save()
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "Observation"
+        verbose_name_plural = "Observations"
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
 
 class Forecast(models.Model):
@@ -219,23 +235,23 @@ class Forecast(models.Model):
     Model allowing a Forecast entity object to be saved to a persistent datastore
     """
     INTERVAL_CHOICES = (
-        (u'3h', u'Three hours'),
-        (u'daily', u'Daily'))
+        (u"3h", u"Three hours"),
+        (u"daily", u"Daily"))
 
     interval = models.CharField(max_length=255,
-                                verbose_name='Time granularity of the forecast',
-                                help_text='Interval',
+                                verbose_name="Time granularity of the forecast",
+                                help_text="Interval",
                                 choices=INTERVAL_CHOICES)
     reception_time = models.DateTimeField(
         null=True, blank=True,
-        verbose_name='Time the observation was received',
-        help_text='Reception time')
+        verbose_name="Time the observation was received",
+        help_text="Reception time")
     location = models.ForeignKey(Location,
                                  on_delete=models.CASCADE,
-                                 verbose_name='Location of the forecast',
-                                 help_text='Location')
+                                 verbose_name="Location of the forecast",
+                                 help_text="Location")
     weathers = models.ManyToManyField(Weather,
-                                      related_name='forecasts',
+                                      related_name="forecasts",
                                       help_text="Weathers",
                                       verbose_name="Weathers of the forecast")
 
@@ -246,7 +262,7 @@ class Forecast(models.Model):
         """
         return ForecastEntity(
             self.interval,
-            timeformatutils.timeformat(self.reception_time, 'unix'),
+            timeformatutils.timeformat(self.reception_time, "unix"),
             self.location.to_entity(),
             [Weather.to_entity(w) for w in self.weathers.all()])
 
@@ -265,7 +281,7 @@ class Forecast(models.Model):
         loc = Location.from_entity(location_entity)
         return Forecast(
             interval=forecast_obj.get_interval(),
-            reception_time=forecast_obj.get_reception_time(timeformat='date'),
+            reception_time=forecast_obj.get_reception_time(timeformat="date"),
             location=loc)
 
     def save_all(self):
@@ -279,13 +295,15 @@ class Forecast(models.Model):
         self.save()
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "Forecast"
+        verbose_name_plural = "Forecasts"
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
 
 class Station(models.Model):
@@ -293,29 +311,29 @@ class Station(models.Model):
     Model allowing a Station entity object to be saved to a persistent datastore
     """
     name = models.CharField(max_length=255,
-                            verbose_name='Name of the meteostation',
-                            help_text='Name',
+                            verbose_name="Name of the meteostation",
+                            help_text="Name",
                             null=True, blank=True)
-    station_id = models.IntegerField(verbose_name='OWM station ID',
-                                     help_text='Station ID')
-    station_type = models.IntegerField(verbose_name='Meteostation type',
-                                       help_text='Type',
+    station_id = models.IntegerField(verbose_name="OWM station ID",
+                                     help_text="Station ID")
+    station_type = models.IntegerField(verbose_name="Meteostation type",
+                                       help_text="Type",
                                        null=True, blank=True)
-    station_status = models.IntegerField(verbose_name='Meteostation status',
-                                         help_text='Status',
+    station_status = models.IntegerField(verbose_name="Meteostation status",
+                                         help_text="Status",
                                          null=True, blank=True)
-    lat = models.FloatField(verbose_name='Latitude of the meteostation',
-                            help_text='Latitude')
-    lon = models.FloatField(verbose_name='Longitude of the meteostation',
-                            help_text='Longitude')
+    lat = models.FloatField(verbose_name="Latitude of the meteostation",
+                            help_text="Latitude")
+    lon = models.FloatField(verbose_name="Longitude of the meteostation",
+                            help_text="Longitude")
     distance = models.FloatField(
-        verbose_name='Distance of station from lat/lon of search criteria',
-        help_text='Distance',
+        verbose_name="Distance of station from lat/lon of search criteria",
+        help_text="Distance",
         null=True, blank=True)
     last_weather = models.ForeignKey(
         Weather, null=True, blank=True, on_delete=models.CASCADE,
-        verbose_name='Last weather measured by the station',
-        help_text='Last weather')
+        verbose_name="Last weather measured by the station",
+        help_text="Last weather")
 
     def to_entity(self):
         """
@@ -363,13 +381,15 @@ class Station(models.Model):
         self.save()
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "Station"
+        verbose_name_plural = "Stations"
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
 
 class StationHistory(models.Model):
@@ -378,22 +398,22 @@ class StationHistory(models.Model):
     """
 
     INTERVAL_CHOICES = (
-        (u'tick', u'Tick'),
-        (u'hour', u'One hour'),
-        (u'day', u'One day'))
+        (u"tick", u"Tick"),
+        (u"hour", u"One hour"),
+        (u"day", u"One day"))
 
-    station_id = models.IntegerField(verbose_name='OWM station ID',
-                                     help_text='Station ID')
+    station_id = models.IntegerField(verbose_name="OWM station ID",
+                                     help_text="Station ID")
     interval = models.CharField(max_length=255,
-                                verbose_name='Time granularity of the station history',
-                                help_text='Interval',
+                                verbose_name="Time granularity of the station history",
+                                help_text="Interval",
                                 choices=INTERVAL_CHOICES)
     reception_time = models.DateTimeField(
         null=True, blank=True,
-        verbose_name='Time the observation was received',
-        help_text='Reception time')
-    measurements = models.TextField(verbose_name='Measured data',
-                                    help_text='Measurements')
+        verbose_name="Time the observation was received",
+        help_text="Reception time")
+    measurements = models.TextField(verbose_name="Measured data",
+                                    help_text="Measurements")
 
     def to_entity(self):
         """
@@ -404,7 +424,7 @@ class StationHistory(models.Model):
         return StationHistoryEntity(
             self.station_id,
             self.interval,
-            timeformatutils.timeformat(self.reception_time, 'unix'),
+            timeformatutils.timeformat(self.reception_time, "unix"),
             data)
 
     @classmethod
@@ -419,17 +439,19 @@ class StationHistory(models.Model):
         return StationHistory(
             station_id=stationhistory_obj.get_station_ID(),
             interval=stationhistory_obj.get_interval(),
-            reception_time=stationhistory_obj.get_reception_time(timeformat='date'),
+            reception_time=stationhistory_obj.get_reception_time(timeformat="date"),
             measurements=json.dumps(stationhistory_obj.get_measurements()))
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "Station History"
+        verbose_name_plural = "Station Histories"
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
 
 class UVIndex(models.Model):
@@ -438,29 +460,29 @@ class UVIndex(models.Model):
     """
 
     INTERVAL_CHOICES = (
-        (u'minute', u'One minute'),
-        (u'hour', u'One hour'),
-        (u'day', u'One day'),
-        (u'month', u'One month'),
-        (u'year', u'One year'))
+        (u"minute", u"One minute"),
+        (u"hour", u"One hour"),
+        (u"day", u"One day"),
+        (u"month", u"One month"),
+        (u"year", u"One year"))
 
     reference_time = models.DateTimeField(
-        verbose_name='Time the observation refers to',
-        help_text='Reference time')
+        verbose_name="Time the observation refers to",
+        help_text="Reference time")
     location = models.ForeignKey(Location,
                                  on_delete=models.CASCADE,
-                                 verbose_name='Location of the observation',
-                                 help_text='Location')
-    value = models.FloatField(verbose_name='Observed UV intensity',
-                              help_text='Value')
+                                 verbose_name="Location of the observation",
+                                 help_text="Location")
+    value = models.FloatField(verbose_name="Observed UV intensity",
+                              help_text="Value")
     # interval = models.CharField(max_length=255,
-    #                             verbose_name='Time granularity of the observation',
-    #                             help_text='Interval',
+    #                             verbose_name="Time granularity of the observation",
+    #                             help_text="Interval",
     #                             choices=INTERVAL_CHOICES)
     reception_time = models.DateTimeField(
         null=True, blank=True,
-        verbose_name='Time the observation was received',
-        help_text='Reception time')
+        verbose_name="Time the observation was received",
+        help_text="Reception time")
 
     def to_entity(self):
         """
@@ -468,11 +490,11 @@ class UVIndex(models.Model):
         :return: a pyowm.uvindexapi30.uvindex.UVIndex instance
         """
         return UVIndexEntity(
-            timeformatutils.timeformat(self.reference_time, 'unix'),
+            timeformatutils.timeformat(self.reference_time, "unix"),
             Location.to_entity(self.location),
             # self.interval,
             self.value,
-            timeformatutils.timeformat(self.reception_time, 'unix'))
+            timeformatutils.timeformat(self.reception_time, "unix"))
 
     @classmethod
     def from_entity(cls, uvindex_obj):
@@ -485,11 +507,11 @@ class UVIndex(models.Model):
         assert isinstance(uvindex_obj, UVIndexEntity)
         loc = uvindex_obj.get_location()
         return UVIndex(
-            reference_time=uvindex_obj.get_reference_time(timeformat='date'),
+            reference_time=uvindex_obj.get_reference_time(timeformat="date"),
             location=Location.from_entity(loc),
             value=uvindex_obj.get_value(),
             # interval=uvindex_obj.get_interval(),
-            reception_time=uvindex_obj.get_reception_time(timeformat='date'))
+            reception_time=uvindex_obj.get_reception_time(timeformat="date"))
 
     def save_all(self):
         """
@@ -502,13 +524,15 @@ class UVIndex(models.Model):
         self.save()
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "UV Index"
+        verbose_name_plural = "UV Indices"
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
 
 class COIndex(models.Model):
@@ -517,28 +541,28 @@ class COIndex(models.Model):
     """
 
     INTERVAL_CHOICES = (
-        (u'minute', u'One minute'),
-        (u'hour', u'One hour'),
-        (u'day', u'One day'),
-        (u'month', u'One month'),
-        (u'year', u'One year'))
+        (u"minute", u"One minute"),
+        (u"hour", u"One hour"),
+        (u"day", u"One day"),
+        (u"month", u"One month"),
+        (u"year", u"One year"))
 
     reference_time = models.DateTimeField(
-        verbose_name='Time the observation refers to',
-        help_text='Reference time')
+        verbose_name="Time the observation refers to",
+        help_text="Reference time")
     location = models.ForeignKey(Location,
                                  on_delete=models.CASCADE,
-                                 verbose_name='Location of the observation',
-                                 help_text='Location')
+                                 verbose_name="Location of the observation",
+                                 help_text="Location")
     interval = models.CharField(max_length=255,
-                                verbose_name='Time granularity of the observation',
+                                verbose_name="Time granularity of the observation",
                                 choices=INTERVAL_CHOICES)
     reception_time = models.DateTimeField(
         null=True, blank=True,
-        verbose_name='Time the observation was received',
-        help_text='Reception time')
-    co_samples = models.TextField(verbose_name='CO samples data',
-                                  help_text='CO samples')
+        verbose_name="Time the observation was received",
+        help_text="Reception time")
+    co_samples = models.TextField(verbose_name="CO samples data",
+                                  help_text="CO samples")
 
     def to_entity(self):
         """
@@ -546,11 +570,11 @@ class COIndex(models.Model):
         :return: a pyowm.pollutionapi30.coindex.COIndex instance
         """
         return COIndexEntity(
-            timeformatutils.timeformat(self.reference_time, 'unix'),
+            timeformatutils.timeformat(self.reference_time, "unix"),
             Location.to_entity(self.location),
             self.interval,
             json.loads(self.co_samples),
-            timeformatutils.timeformat(self.reception_time, 'unix'))
+            timeformatutils.timeformat(self.reception_time, "unix"))
 
     @classmethod
     def from_entity(cls, coindex_obj):
@@ -563,10 +587,10 @@ class COIndex(models.Model):
         assert isinstance(coindex_obj, COIndexEntity)
         loc = coindex_obj.get_location()
         return COIndex(
-            reference_time=coindex_obj.get_reference_time(timeformat='date'),
+            reference_time=coindex_obj.get_reference_time(timeformat="date"),
             location=Location.from_entity(loc),
             interval=coindex_obj.get_interval(),
-            reception_time=coindex_obj.get_reception_time(timeformat='date'),
+            reception_time=coindex_obj.get_reception_time(timeformat="date"),
             co_samples=json.dumps(coindex_obj.get_co_samples()))
 
     def save_all(self):
@@ -580,13 +604,15 @@ class COIndex(models.Model):
         self.save()
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "CO Index"
+        verbose_name_plural = "CO Indices"
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
 
 class NO2Index(models.Model):
@@ -595,28 +621,28 @@ class NO2Index(models.Model):
     """
 
     INTERVAL_CHOICES = (
-        (u'minute', u'One minute'),
-        (u'hour', u'One hour'),
-        (u'day', u'One day'),
-        (u'month', u'One month'),
-        (u'year', u'One year'))
+        (u"minute", u"One minute"),
+        (u"hour", u"One hour"),
+        (u"day", u"One day"),
+        (u"month", u"One month"),
+        (u"year", u"One year"))
 
     reference_time = models.DateTimeField(
-        verbose_name='Time the observation refers to',
-        help_text='Reference time')
+        verbose_name="Time the observation refers to",
+        help_text="Reference time")
     location = models.ForeignKey(Location,
                                  on_delete=models.CASCADE,
-                                 verbose_name='Location of the observation',
-                                 help_text='Location')
+                                 verbose_name="Location of the observation",
+                                 help_text="Location")
     interval = models.CharField(max_length=255,
-                                verbose_name='Time granularity of the observation',
+                                verbose_name="Time granularity of the observation",
                                 choices=INTERVAL_CHOICES)
     reception_time = models.DateTimeField(
         null=True, blank=True,
-        verbose_name='Time the observation was received',
-        help_text='Reception time')
-    no2_samples = models.TextField(verbose_name='NO2 samples data',
-                                  help_text='NO2 samples')
+        verbose_name="Time the observation was received",
+        help_text="Reception time")
+    no2_samples = models.TextField(verbose_name="NO2 samples data",
+                                  help_text="NO2 samples")
 
     def to_entity(self):
         """
@@ -624,11 +650,11 @@ class NO2Index(models.Model):
         :return: a pyowm.pollutionapi30.no2index.NO2Index instance
         """
         return NO2IndexEntity(
-            timeformatutils.timeformat(self.reference_time, 'unix'),
+            timeformatutils.timeformat(self.reference_time, "unix"),
             Location.to_entity(self.location),
             self.interval,
             json.loads(self.no2_samples),
-            timeformatutils.timeformat(self.reception_time, 'unix'))
+            timeformatutils.timeformat(self.reception_time, "unix"))
 
     @classmethod
     def from_entity(cls, no2index_obj):
@@ -641,10 +667,10 @@ class NO2Index(models.Model):
         assert isinstance(no2index_obj, NO2IndexEntity)
         loc = no2index_obj.get_location()
         return NO2Index(
-            reference_time=no2index_obj.get_reference_time(timeformat='date'),
+            reference_time=no2index_obj.get_reference_time(timeformat="date"),
             location=Location.from_entity(loc),
             interval=no2index_obj.get_interval(),
-            reception_time=no2index_obj.get_reception_time(timeformat='date'),
+            reception_time=no2index_obj.get_reception_time(timeformat="date"),
             no2_samples=json.dumps(no2index_obj.get_no2_samples()))
 
     def save_all(self):
@@ -658,13 +684,15 @@ class NO2Index(models.Model):
         self.save()
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "NO2 Index"
+        verbose_name_plural = "NO2 Indices"
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
 
 class SO2Index(models.Model):
@@ -673,28 +701,28 @@ class SO2Index(models.Model):
     """
 
     INTERVAL_CHOICES = (
-        (u'minute', u'One minute'),
-        (u'hour', u'One hour'),
-        (u'day', u'One day'),
-        (u'month', u'One month'),
-        (u'year', u'One year'))
+        (u"minute", u"One minute"),
+        (u"hour", u"One hour"),
+        (u"day", u"One day"),
+        (u"month", u"One month"),
+        (u"year", u"One year"))
 
     reference_time = models.DateTimeField(
-        verbose_name='Time the observation refers to',
-        help_text='Reference time')
+        verbose_name="Time the observation refers to",
+        help_text="Reference time")
     location = models.ForeignKey(Location,
                                  on_delete=models.CASCADE,
-                                 verbose_name='Location of the observation',
-                                 help_text='Location')
+                                 verbose_name="Location of the observation",
+                                 help_text="Location")
     interval = models.CharField(max_length=255,
-                                verbose_name='Time granularity of the observation',
+                                verbose_name="Time granularity of the observation",
                                 choices=INTERVAL_CHOICES)
     reception_time = models.DateTimeField(
         null=True, blank=True,
-        verbose_name='Time the observation was received',
-        help_text='Reception time')
-    so2_samples = models.TextField(verbose_name='SO2 samples data',
-                                  help_text='SO2 samples')
+        verbose_name="Time the observation was received",
+        help_text="Reception time")
+    so2_samples = models.TextField(verbose_name="SO2 samples data",
+                                  help_text="SO2 samples")
 
     def to_entity(self):
         """
@@ -702,11 +730,11 @@ class SO2Index(models.Model):
         :return: a pyowm.pollutionapi30.so2index.SO2Index instance
         """
         return SO2IndexEntity(
-            timeformatutils.timeformat(self.reference_time, 'unix'),
+            timeformatutils.timeformat(self.reference_time, "unix"),
             Location.to_entity(self.location),
             self.interval,
             json.loads(self.so2_samples),
-            timeformatutils.timeformat(self.reception_time, 'unix'))
+            timeformatutils.timeformat(self.reception_time, "unix"))
 
     @classmethod
     def from_entity(cls, so2index_obj):
@@ -719,10 +747,10 @@ class SO2Index(models.Model):
         assert isinstance(so2index_obj, SO2IndexEntity)
         loc = so2index_obj.get_location()
         return SO2Index(
-            reference_time=so2index_obj.get_reference_time(timeformat='date'),
+            reference_time=so2index_obj.get_reference_time(timeformat="date"),
             location=Location.from_entity(loc),
             interval=so2index_obj.get_interval(),
-            reception_time=so2index_obj.get_reception_time(timeformat='date'),
+            reception_time=so2index_obj.get_reception_time(timeformat="date"),
             so2_samples=json.dumps(so2index_obj.get_so2_samples()))
 
     def save_all(self):
@@ -736,13 +764,15 @@ class SO2Index(models.Model):
         self.save()
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "SO2 Index"
+        verbose_name_plural = "SO2 Indices"
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
 
 class Ozone(models.Model):
@@ -751,28 +781,28 @@ class Ozone(models.Model):
     """
 
     INTERVAL_CHOICES = (
-        (u'minute', u'One minute'),
-        (u'hour', u'One hour'),
-        (u'day', u'One day'),
-        (u'month', u'One month'),
-        (u'year', u'One year'))
+        (u"minute", u"One minute"),
+        (u"hour", u"One hour"),
+        (u"day", u"One day"),
+        (u"month", u"One month"),
+        (u"year", u"One year"))
 
     reference_time = models.DateTimeField(
-        verbose_name='Time the observation refers to',
-        help_text='Reference time')
+        verbose_name="Time the observation refers to",
+        help_text="Reference time")
     location = models.ForeignKey(Location,
                                  on_delete=models.CASCADE,
-                                 verbose_name='Location of the observation',
-                                 help_text='Location')
-    du_value = models.FloatField(verbose_name='Observed ozone Dobson Units',
-                                 help_text='DU value')
+                                 verbose_name="Location of the observation",
+                                 help_text="Location")
+    du_value = models.FloatField(verbose_name="Observed ozone Dobson Units",
+                                 help_text="DU value")
     interval = models.CharField(max_length=255,
-                                verbose_name='Time granularity of the observation',
+                                verbose_name="Time granularity of the observation",
                                 choices=INTERVAL_CHOICES)
     reception_time = models.DateTimeField(
         null=True, blank=True,
-        verbose_name='Time the observation was received',
-        help_text='Reception time')
+        verbose_name="Time the observation was received",
+        help_text="Reception time")
 
     def to_entity(self):
         """
@@ -780,11 +810,11 @@ class Ozone(models.Model):
         :return: a pyowm.pollutionapi30.ozone.Ozone instance
         """
         return OzoneEntity(
-            timeformatutils.timeformat(self.reference_time, 'unix'),
+            timeformatutils.timeformat(self.reference_time, "unix"),
             Location.to_entity(self.location),
             self.interval,
             self.du_value,
-            timeformatutils.timeformat(self.reception_time, 'unix'))
+            timeformatutils.timeformat(self.reception_time, "unix"))
 
     @classmethod
     def from_entity(cls, ozone_obj):
@@ -797,11 +827,11 @@ class Ozone(models.Model):
         assert isinstance(ozone_obj, OzoneEntity)
         loc = ozone_obj.get_location()
         return Ozone(
-            reference_time=ozone_obj.get_reference_time(timeformat='date'),
+            reference_time=ozone_obj.get_reference_time(timeformat="date"),
             location=Location.from_entity(loc),
             du_value=ozone_obj.get_du_value(),
             interval=ozone_obj.get_interval(),
-            reception_time=ozone_obj.get_reception_time(timeformat='date'))
+            reception_time=ozone_obj.get_reception_time(timeformat="date"))
 
     def save_all(self):
         """
@@ -814,11 +844,13 @@ class Ozone(models.Model):
         self.save()
 
     class Meta:
-        app_label = 'django_pyowm'
+        app_label = "django_pyowm"
+        verbose_name = "Ozone Instance"
+        verbose_name_plural = "Ozone Instances"
 
     def __repr__(self):
         return "<%s.%s - pk=%s>" % (
             __name__,
             self.__class__.__name__,
-            self.pk if self.pk is not None else 'None')
+            self.pk if self.pk is not None else "None")
 
