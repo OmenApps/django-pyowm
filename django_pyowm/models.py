@@ -155,6 +155,36 @@ class Weather(models.Model):
             humidex=weather_obj.get_humidex(),
             heat_index=weather_obj.get_heat_index())
 
+    @property
+    def get_temp_dict(self):
+        return json.loads(self.temperature)
+
+    @property
+    def get_temp_current(self):
+        return self.get_temp_dict["temp"]
+
+    @property
+    def get_temp_max(self):
+        return self.get_temp_dict["temp_max"]
+
+    @property
+    def get_temp_min(self):
+        return self.get_temp_dict["temp_min"]
+
+    @property
+    def get_temp_kf(self):
+        return self.get_temp_dict["temp_kf"]
+
+    @property
+    def get_temp_celcius(self):
+        temp = self.get_temp_current
+        return temp - 273.15
+
+    @property
+    def get_temp_fahrenheit(self):
+        temp = self.get_temp_current
+        return (temp - 273.15) * (9 / 5) + 32
+
     class Meta:
         app_label = "django_pyowm"
         verbose_name = "Weather Instance"
